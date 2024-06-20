@@ -22,7 +22,7 @@ COPY ./go.sum /app/go.sum
 WORKDIR /app/indexer
 RUN make indexer
 
-FROM alpine:3.18
+FROM alpine:3
 COPY --from=builder /app/indexer/indexer /usr/local/bin
 COPY --from=builder /app/indexer/migrations /app/indexer/migrations
 
