@@ -8,13 +8,17 @@ import (
 	"io"
 )
 
+const HEAP_START = 0x05000000
+
 func LoadELF(f *elf.File) (*State, error) {
 	s := &State{
-		PC:        uint32(f.Entry),
-		NextPC:    uint32(f.Entry + 4),
-		HI:        0,
-		LO:        0,
-		Heap:      0x20000000,
+		Cpu: CpuScalars{
+			PC:     uint32(f.Entry),
+			NextPC: uint32(f.Entry + 4),
+			LO:     0,
+			HI:     0,
+		},
+		Heap:      HEAP_START,
 		Registers: [32]uint32{},
 		Memory:    NewMemory(),
 		ExitCode:  0,
@@ -42,6 +46,9 @@ func LoadELF(f *elf.File) (*State, error) {
 
 		if prog.Vaddr+prog.Memsz >= uint64(1<<32) {
 			return nil, fmt.Errorf("program %d out of 32-bit mem range: %x - %x (size: %x)", i, prog.Vaddr, prog.Vaddr+prog.Memsz, prog.Memsz)
+		}
+		if prog.Vaddr+prog.Memsz >= HEAP_START {
+			return nil, fmt.Errorf("program %d overlaps with heap: %x - %x (size: %x). The heap start offset must be reconfigured", i, prog.Vaddr, prog.Vaddr+prog.Memsz, prog.Memsz)
 		}
 		if err := s.Memory.SetMemoryRange(uint32(prog.Vaddr), r); err != nil {
 			return nil, fmt.Errorf("failed to read program segment %d: %w", i, err)

@@ -8,10 +8,10 @@ import { FaultDisputeGame_Init } from "test/dispute/FaultDisputeGame.t.sol";
 import { DisputeGameFactory } from "src/dispute/DisputeGameFactory.sol";
 import { FaultDisputeGame } from "src/dispute/FaultDisputeGame.sol";
 import { IFaultDisputeGame } from "src/dispute/interfaces/IFaultDisputeGame.sol";
+import { Process } from "scripts/libraries/Process.sol";
 
-import "src/libraries/DisputeTypes.sol";
-import "src/libraries/DisputeErrors.sol";
-import { LibPosition } from "src/dispute/lib/LibPosition.sol";
+import "src/dispute/lib/Types.sol";
+import "src/dispute/lib/Errors.sol";
 
 /**
  * @title FaultDisputeGameViz
@@ -25,13 +25,7 @@ contract FaultDisputeGameViz is Script, FaultDisputeGame_Init {
 
     function setUp() public override {
         super.setUp();
-        super.init({
-            rootClaim: ROOT_CLAIM,
-            absolutePrestate: ABSOLUTE_PRESTATE,
-            l2BlockNumber: 0x10,
-            genesisBlockNumber: 0,
-            genesisOutputRoot: Hash.wrap(bytes32(0))
-        });
+        super.init({ rootClaim: ROOT_CLAIM, absolutePrestate: ABSOLUTE_PRESTATE, l2BlockNumber: 0x10 });
     }
 
     /**
@@ -86,6 +80,6 @@ contract FaultDisputeGameViz is Script, FaultDisputeGame_Init {
         commands[0] = "python3";
         commands[1] = "scripts/dag-viz.py";
         commands[2] = vm.toString(abi.encode(gameData));
-        vm.ffi(commands);
+        Process.run(commands);
     }
 }

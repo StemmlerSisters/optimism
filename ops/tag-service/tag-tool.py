@@ -1,25 +1,22 @@
 import argparse
 import subprocess
-import re
 import semver
 
 SERVICES  = [
     'ci-builder',
     'ci-builder-rust',
     'chain-mon',
-    'indexer',
     'op-node',
     'op-batcher',
     'op-challenger',
     'op-dispute-mon',
     'op-proposer',
-    'op-ufm',
-    'proxyd',
+    'da-server',
     'op-heartbeat',
-    'ufm-metamask',
     'op-contracts',
     'test',
     'op-stack', # special case for tagging op-node, op-batcher, and op-proposer together
+    'op-conductor',
 ]
 VERSION_PATTERN = '^{service}/v\\d+\\.\\d+\\.\\d+(-rc\\.\\d+)?$'
 GIT_TAG_COMMAND = 'git tag -a {tag} -m "{message}"'

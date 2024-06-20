@@ -20,7 +20,6 @@ on:
         options:
           - ci-builder
           - ci-builder-rust
-          - indexer
           - op-heartbeat
           - chain-mon
           - op-node
@@ -30,9 +29,9 @@ on:
           - op-program
           - op-dispute-mon
           - op-ufm
-          - proxyd
-          - ufm-metamask
+          - da-server
           - op-contracts
+          - op-conductor
       prerelease:
         description: Increment major/minor/patch as prerelease?
         required: false

@@ -44,6 +44,8 @@ type ProposerConfig struct {
 	// is never valid on an alternative L1 chain that would produce different L2 data.
 	// This option is not necessary when higher proposal latency is acceptable and L1 is healthy.
 	AllowNonFinalized bool
+
+	WaitNodeSync bool
 }
 
 type ProposerService struct {
@@ -89,6 +91,7 @@ func (ps *ProposerService) initFromCLIConfig(ctx context.Context, version string
 	ps.PollInterval = cfg.PollInterval
 	ps.NetworkTimeout = cfg.TxMgrConfig.NetworkTimeout
 	ps.AllowNonFinalized = cfg.AllowNonFinalized
+	ps.WaitNodeSync = cfg.WaitNodeSync
 
 	ps.initL2ooAddress(cfg)
 	ps.initDGF(cfg)
@@ -183,19 +186,19 @@ func (ps *ProposerService) initPProf(cfg *CLIConfig) error {
 
 func (ps *ProposerService) initMetricsServer(cfg *CLIConfig) error {
 	if !cfg.MetricsConfig.Enabled {
-		ps.Log.Info("metrics disabled")
+		ps.Log.Info("Metrics disabled")
 		return nil
 	}
 	m, ok := ps.Metrics.(opmetrics.RegistryMetricer)
 	if !ok {
 		return fmt.Errorf("metrics were enabled, but metricer %T does not expose registry for metrics-server", ps.Metrics)
 	}
-	ps.Log.Debug("starting metrics server", "addr", cfg.MetricsConfig.ListenAddr, "port", cfg.MetricsConfig.ListenPort)
+	ps.Log.Debug("Starting metrics server", "addr", cfg.MetricsConfig.ListenAddr, "port", cfg.MetricsConfig.ListenPort)
 	metricsSrv, err := opmetrics.StartServer(m.Registry(), cfg.MetricsConfig.ListenAddr, cfg.MetricsConfig.ListenPort)
 	if err != nil {
 		return fmt.Errorf("failed to start metrics server: %w", err)
 	}
-	ps.Log.Info("started metrics server", "addr", metricsSrv.Addr())
+	ps.Log.Info("Started metrics server", "addr", metricsSrv.Addr())
 	ps.metricsSrv = metricsSrv
 	return nil
 }
@@ -259,8 +262,7 @@ func (ps *ProposerService) initRPCServer(cfg *CLIConfig) error {
 // Start runs once upon start of the proposer lifecycle,
 // and starts L2Output-submission work if the proposer is configured to start submit data on startup.
 func (ps *ProposerService) Start(_ context.Context) error {
-	ps.driver.Log.Info("Starting Proposer")
-
+	ps.Log.Info("Starting Proposer")
 	return ps.driver.StartL2OutputSubmitting()
 }
 

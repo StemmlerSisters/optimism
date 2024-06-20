@@ -10,6 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/ethereum-optimism/optimism/op-service/errutil"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus/misc/eip4844"
@@ -272,7 +273,7 @@ func (m *SimpleTxManager) craftTx(ctx context.Context, candidate TxCandidate) (*
 			Value:     candidate.Value,
 		})
 		if err != nil {
-			return nil, fmt.Errorf("failed to estimate gas: %w", err)
+			return nil, fmt.Errorf("failed to estimate gas: %w", errutil.TryAddRevertReason(err))
 		}
 		gasLimit = gas
 	}
@@ -317,14 +318,13 @@ func (m *SimpleTxManager) craftTx(ctx context.Context, candidate TxCandidate) (*
 		}
 	}
 	return m.signWithNextNonce(ctx, txMessage) // signer sets the nonce field of the tx
-
 }
 
 // MakeSidecar builds & returns the BlobTxSidecar and corresponding blob hashes from the raw blob
 // data.
 func MakeSidecar(blobs []*eth.Blob) (*types.BlobTxSidecar, []common.Hash, error) {
 	sidecar := &types.BlobTxSidecar{}
-	blobHashes := []common.Hash{}
+	blobHashes := make([]common.Hash, 0, len(blobs))
 	for i, blob := range blobs {
 		rawBlob := *blob.KZGBlob()
 		sidecar.Blobs = append(sidecar.Blobs, rawBlob)
@@ -419,7 +419,7 @@ func (m *SimpleTxManager) sendTx(ctx context.Context, tx *types.Transaction) (*t
 		return tx
 	}
 
-	// Immediately publish a transaction before starting the resumbission loop
+	// Immediately publish a transaction before starting the resubmission loop
 	tx = publishAndWait(tx, false)
 
 	ticker := time.NewTicker(m.cfg.ResubmissionTimeout)
@@ -460,7 +460,7 @@ func (m *SimpleTxManager) sendTx(ctx context.Context, tx *types.Transaction) (*t
 func (m *SimpleTxManager) publishTx(ctx context.Context, tx *types.Transaction, sendState *SendState, bumpFeesImmediately bool) (*types.Transaction, bool) {
 	l := m.txLogger(tx, true)
 
-	l.Info("Publishing transaction")
+	l.Info("Publishing transaction", "tx", tx.Hash())
 
 	for {
 		// if the tx manager closed, give up without bumping fees or retrying
@@ -494,7 +494,7 @@ func (m *SimpleTxManager) publishTx(ctx context.Context, tx *types.Transaction, 
 
 		if err == nil {
 			m.metr.TxPublished("")
-			l.Info("Transaction successfully published")
+			l.Info("Transaction successfully published", "tx", tx.Hash())
 			return tx, true
 		}
 
@@ -599,6 +599,11 @@ func (m *SimpleTxManager) queryReceipt(ctx context.Context, txHash common.Hash, 
 	}
 
 	m.metr.RecordBaseFee(tip.BaseFee)
+	if tip.ExcessBlobGas != nil {
+		blobFee := eip4844.CalcBlobFee(*tip.ExcessBlobGas)
+		m.metr.RecordBlobBaseFee(blobFee)
+	}
+
 	m.l.Debug("Transaction mined, checking confirmations", "tx", txHash,
 		"block", eth.ReceiptBlockID(receipt), "tip", eth.HeaderBlockID(tip),
 		"numConfirmations", m.cfg.NumConfirmations)
@@ -752,6 +757,7 @@ func (m *SimpleTxManager) suggestGasPriceCaps(ctx context.Context) (*big.Int, *b
 	var blobFee *big.Int
 	if head.ExcessBlobGas != nil {
 		blobFee = eip4844.CalcBlobFee(*head.ExcessBlobGas)
+		m.metr.RecordBlobBaseFee(blobFee)
 	}
 	return tip, baseFee, blobFee, nil
 }

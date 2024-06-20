@@ -6,7 +6,7 @@
   "private": true,
   "engines": {
     "node": ">=16",
-    "pnpm": ">=8"
+    "pnpm": ">=9"
   },
   "scripts": {
     "clean": "pnpm recursive run clean; rm -rf node_modules packages/*/node_modules && echo 'Finished cleaning. Run `pnpm install && pnpm build` from root of repo to rebuild the repo.'",
@@ -21,10 +21,9 @@
     "lint:ts:check": "npx nx run-many --target=lint:ts:check",
     "lint:check": "npx nx run-many --target=lint:check",
     "lint:fix": "npx nx run-many --target=lint:fix",
-    "lint:shellcheck": "find . -type f -name '*.sh' -not -path '*/node_modules/*' -not -path './packages/contracts-bedrock/lib/*' -not -path './packages/contracts-bedrock/kout*/*' -not -path './.husky/_/husky.sh' -exec sh -c 'echo \"Checking $1\"; shellcheck \"$1\"' _ {} \\;",
+    "lint:shellcheck": "find . -type f -name '*.sh' -not -path '*/node_modules/*' -not -path './packages/contracts-bedrock/lib/*' -not -path './packages/contracts-bedrock/kout*/*' -exec sh -c 'echo \"Checking $1\"; shellcheck \"$1\"' _ {} \\;",
     "preinstall": "npx only-allow pnpm",
     "ready": "pnpm lint && pnpm test",
-    "prepare": "husky install",
     "release": "npx nx run-many --target=build --skip-nx-cache && pnpm changeset publish",
     "release:check": "changeset status --verbose --since=origin/main",
     "release:publish": "pnpm install --frozen-lockfile && npx nx run-many --target=build && pnpm build && changeset publish",
@@ -66,16 +65,15 @@
     "eslint-plugin-promise": "^5.1.0",
     "eslint-plugin-react": "^7.24.0",
     "eslint-plugin-unicorn": "^50.0.1",
-    "husky": "^9.0.10",
-    "lint-staged": "15.2.0",
     "mocha": "^10.2.0",
-    "nx": "18.0.4",
+    "nx": "18.2.2",
+    "nx-cloud": "latest",
     "nyc": "^15.1.0",
     "prettier": "^2.8.0",
     "rimraf": "^5.0.5",
     "ts-mocha": "^10.0.0",
-    "typescript": "^5.3.3",
-    "nx-cloud": "latest"
+    "typescript": "^5.4.5",
+    "wait-on": "^7.2.0"
   },
   "dependencies": {
     "@changesets/cli": "^2.27.1"

@@ -5,7 +5,7 @@ import (
 
 	"github.com/ethereum-optimism/optimism/op-challenger/game/fault/types"
 	gameTypes "github.com/ethereum-optimism/optimism/op-challenger/game/types"
-	"github.com/ethereum-optimism/optimism/op-dispute-mon/mon/resolution"
+	"github.com/ethereum-optimism/optimism/op-dispute-mon/mon"
 	"github.com/ethereum-optimism/optimism/op-dispute-mon/mon/transform"
 	disputeTypes "github.com/ethereum-optimism/optimism/op-dispute-mon/mon/types"
 	"github.com/ethereum/go-ethereum/common"
@@ -14,8 +14,6 @@ import (
 
 func verifyGameRules(t *testing.T, game types.Game, rootClaimCorrect bool) {
 	actualResult, claimTree, resolvedGame := gameResult(game)
-	t.Log("Resolved game:")
-	logClaims(t, resolvedGame)
 
 	verifyExpectedGameResult(t, rootClaimCorrect, actualResult)
 
@@ -82,18 +80,20 @@ func verifyChallengerNeverCountersAClaimTwice(t *testing.T, tree *disputeTypes.B
 	}
 }
 
+func enrichClaims(claims []types.Claim) []disputeTypes.EnrichedClaim {
+	enriched := make([]disputeTypes.EnrichedClaim, len(claims))
+	for i, claim := range claims {
+		enriched[i] = disputeTypes.EnrichedClaim{Claim: claim}
+	}
+	return enriched
+}
+
 func gameResult(game types.Game) (gameTypes.GameStatus, *disputeTypes.BidirectionalTree, types.Game) {
-	tree := transform.CreateBidirectionalTree(game.Claims())
-	result := resolution.Resolve(tree)
+	tree := transform.CreateBidirectionalTree(enrichClaims(game.Claims()))
+	result := mon.Resolve(tree)
 	resolvedClaims := make([]types.Claim, 0, len(tree.Claims))
 	for _, claim := range tree.Claims {
 		resolvedClaims = append(resolvedClaims, *claim.Claim)
 	}
 	return result, tree, types.NewGameState(resolvedClaims, game.MaxDepth())
-}
-
-func logClaims(t *testing.T, game types.Game) {
-	for _, claim := range game.Claims() {
-		t.Log(printClaim(claim, game))
-	}
 }

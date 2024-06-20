@@ -5,9 +5,8 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/ethereum-optimism/optimism/op-node/chaincfg"
-	"github.com/ethereum-optimism/optimism/op-node/rollup/derive"
-	"github.com/ethereum-optimism/optimism/op-service/eth"
+	"github.com/stretchr/testify/require"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/core/state"
@@ -15,11 +14,15 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/trie"
-	"github.com/stretchr/testify/require"
+
+	"github.com/ethereum-optimism/optimism/op-node/chaincfg"
+	"github.com/ethereum-optimism/optimism/op-node/rollup/derive"
+	"github.com/ethereum-optimism/optimism/op-node/rollup/engine"
+	"github.com/ethereum-optimism/optimism/op-service/eth"
 )
 
 // Should implement derive.Engine
-var _ derive.Engine = (*OracleEngine)(nil)
+var _ engine.Engine = (*OracleEngine)(nil)
 
 func TestPayloadByHash(t *testing.T) {
 	ctx := context.Background()
@@ -161,13 +164,13 @@ func createOracleEngine(t *testing.T) (*OracleEngine, *stubEngineBackend) {
 	}
 	engine := OracleEngine{
 		backend:   backend,
-		rollupCfg: chaincfg.Goerli,
+		rollupCfg: chaincfg.Sepolia,
 	}
 	return &engine, backend
 }
 
 func createL2Block(t *testing.T, number int) *types.Block {
-	tx, err := derive.L1InfoDeposit(chaincfg.Goerli, eth.SystemConfig{}, uint64(1), eth.HeaderBlockInfo(&types.Header{
+	tx, err := derive.L1InfoDeposit(chaincfg.Sepolia, eth.SystemConfig{}, uint64(1), eth.HeaderBlockInfo(&types.Header{
 		Number:  big.NewInt(32),
 		BaseFee: big.NewInt(7),
 	}), 0)
