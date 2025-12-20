@@ -78,6 +78,6 @@
     "nx-cloud": "latest"
   },
   "dependencies": {
-    "@changesets/cli": "^2.27.1"
+    "@changesets/cli": "^2.29.6"
   }
 }
